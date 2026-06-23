@@ -1,108 +1,109 @@
 # HIPAAStack
 
-**Multi-cloud, compliance-first infrastructure for healthcare AI systems.**
+**AWS compliance-first infrastructure for healthcare AI systems.**
 
-HIPAAStack provides battle-tested infrastructure modules organized around
-*compliance problems* — not cloud service names — so the same module set
-works whether you're deploying on AWS, Azure, or GCP. Each module is built
-to satisfy specific HIPAA / PIPA / PIPEDA technical safeguards, with the
-reasoning documented inline, not just the configuration.
+## What is HIPAAStack?
 
-Built from real client work: AI voice triage systems, EMR integrations with
-no public API, multi-tenant clinical platforms, and AI agent systems
-handling PHI directly.
+While manually provisioning a single server is simple, scaling your application and business can lead to repetitive and time-consuming tasks. HIPAAStack solves this by providing battle-tested, production-ready Infrastructure as Code (IaC) modules organized around **compliance problems** on Amazon Web Services (AWS). 
 
-## Why problem-first, not service-first
+Each module is built to satisfy specific HIPAA / PIPA / PIPEDA technical safeguards, with the security and compliance reasoning documented inline in the code itself, not just in external documentation.
 
-Most infrastructure-as-code libraries for healthcare are organized by cloud
-service name — "here's our S3 module, here's our KMS module." That's useful
-if you already know AWS maps "encrypted storage" to S3+KMS. It's a dead end
-if you're on Azure or GCP, or if you're a developer who doesn't have an AWS
-background and just knows you need "a place to store files that's
-encrypted and HIPAA-safe."
+Built from real-world clinical client work: AI voice triage systems, legacy EMR integrations with no public APIs, multi-tenant clinical platforms, and conversational AI agents handling Protected Health Information (PHI) directly.
 
-HIPAAStack is organized the other way: pick the **problem** you're solving
-— encrypted storage, network isolation, audit logging, AI agent guardrails
-— and get the implementation for whichever cloud you're actually on.
+---
 
-## Module status
+## Module Status (AWS)
 
-| Problem | AWS | Azure | GCP |
-|---|---|---|---|
-| Network Isolation | ✅ Available | 🔜 Coming Soon | 🔜 Coming Soon |
-| Encrypted Storage | 🔜 Coming Soon | 🔜 Coming Soon | 🔜 Coming Soon |
-| Secrets Management | 🔜 Coming Soon | 🔜 Coming Soon | 🔜 Coming Soon |
-| Audit Logging | 🔜 Coming Soon | 🔜 Coming Soon | 🔜 Coming Soon |
-| Identity & Access | 🔜 Coming Soon | 🔜 Coming Soon | 🔜 Coming Soon |
-| AI Agent Guardrails | 🔜 Coming Soon | 🔜 Coming Soon | 🔜 Coming Soon |
+| Problem / Domain | Status | Included AWS Services / Resources |
+| :--- | :---: | :--- |
+| **Network Isolation** | ✅ Available | VPC, Private Subnets, NAT Gateways, Route Tables, WAFv2, Client VPN |
+| **Encrypted Storage** | ✅ Available | S3 Buckets, KMS CMK, S3 Versioning, Access Logging, AWS Backup |
+| **Secrets Management** | ✅ Available | KMS Keys (with Rotation), Secrets Manager Secrets |
+| **Audit Logging** | ✅ Available | CloudTrail Trail (Management & Data events), CloudWatch Logs, GuardDuty |
+| **Database / Healthcare Store** | ✅ Available | RDS PostgreSQL, AWS HealthLake (FHIR Datastore) |
+| **Compute Services** | ✅ Available | ECS Fargate Serverless Compute, Security Groups, IAM Task Roles |
+| **Identity & Access** | 🔜 Coming Soon | IAM Policies, IAM Roles, Least-privilege Access Control |
+| **AI Agent Guardrails** | 🔜 Coming Soon | Bedrock Guardrails, Content Filtering |
 
-AWS modules are being built and validated first. Azure and GCP equivalents
-will follow the same problem-first structure once each AWS module is
-production-tested.
+---
 
-## Beyond infrastructure — the application layer
+## Beyond Infrastructure — The Application Layer
 
-Infrastructure is necessary but not sufficient. A perfectly encrypted VPC
-doesn't stop a developer from pasting a patient's name into an AI prompt.
-The `patterns/` and `skill/` directories cover the application-layer
-problems infrastructure-as-code can't solve on its own:
+Infrastructure is necessary but not sufficient. A perfectly encrypted VPC doesn't stop a developer from pasting a patient's name into an AI prompt. The `patterns/` and `skill/` directories cover the application-layer problems infrastructure-as-code can't solve on its own:
 
-- **`patterns/emr-without-public-api.md`** — how to integrate with EMRs
-  that don't expose a developer API (more common than you'd think — most
-  IaC libraries assume FHIR/API access exists)
-- **`patterns/deterministic-triage-scoring.md`** — keeping AI out of
-  clinical judgment calls while still using it for conversation and data
-  collection
-- **`patterns/phi-tokenization-for-llm-prompts.md`** — preventing PHI from
-  ever reaching an LLM prompt or API call in the first place
-- **`patterns/voice-ai-phi-handling.md`** — specific guidance for Vapi/
-  Twilio-style voice AI systems that handle PHI in real time
-- **`skill/SKILL.md`** — a Claude/Cursor-compatible skill file enforcing
-  these patterns automatically during development
+- **[`patterns/emr-without-public-api.md`](./patterns/emr-without-public-api.md)** — Securely integrate with legacy EMRs using VPN tunnels, Local Gateway Agents, and HL7 v2/v3 message streams.
+- **[`patterns/deterministic-triage-scoring.md`](./patterns/deterministic-triage-scoring.md)** — Keep AI out of autonomous clinical decision making. Use LLMs to extract structured variables, and run deterministic code logic for clinical triage action.
+- **[`patterns/phi-tokenization-for-llm-prompts.md`](./patterns/phi-tokenization-for-llm-prompts.md)** — Prevent PHI from ever leaving your private cloud environment by tokenizing names, dates, and MRNs, calling the LLM, and detokenizing responses locally.
+- **[`patterns/voice-ai-phi-handling.md`](./patterns/voice-ai-phi-handling.md)** — Architectural guidelines for Vapi/Twilio-style voice AI systems processing audio streams in real time over secure WebSockets.
+- **[`skill/SKILL.md`](./skill/SKILL.md)** — Cursor/Claude developer skill configuration to automatically enforce these rules during AWS development.
 
-## Quick start
+---
+
+## Quick Start Example (AWS)
 
 ```hcl
+# 1. Setup isolated networking and WAF protection
 module "network" {
-  source = "github.com/yourname/hipaastack//modules/network-isolation/aws"
+  source = "github.com/momentum-ai/hipaa-stack//modules/network-isolation/aws"
 
-  name_prefix = "clinic-prod"
-  environment = "production"
-  aws_region  = "ca-central-1"
+  name_prefix             = "clinic-prod"
+  environment             = "production"
+  aws_region              = "us-east-1"
+  vpc_cidr                = "10.0.0.0/16"
+  enable_nat_gateway      = true
+  enable_waf              = true
+}
+
+# 2. Setup S3 storage for PHI with encryption & automatic daily backups
+module "storage" {
+  source = "github.com/momentum-ai/hipaa-stack//modules/encrypted-storage/aws"
+
+  name_prefix         = "clinic-prod"
+  environment         = "production"
+  bucket_name         = "clinic-phi-records-bucket"
+  logging_bucket_name = "clinic-logs-bucket"
+  enable_backup       = true
+}
+
+# 3. Setup central audit trails & GuardDuty threat detection
+module "audit_logs" {
+  source = "github.com/momentum-ai/hipaa-stack//modules/audit-logging/aws"
+
+  name_prefix        = "clinic-prod"
+  environment        = "production"
+  log_retention_days = 365
+  enable_guardduty   = true
 }
 ```
 
-See each module's own README for full usage and a working example.
+See each module's respective directory for full configuration details and variables.
 
-## What this is not
+---
 
-This repo does not make your application "HIPAA compliant" by itself. No
-infrastructure code can. You still need:
+## Compliance Mapping
 
-- Signed Business Associate Agreements (BAAs) with every subprocessor
-- Organizational policy, staff training, and breach notification procedures
-- A real risk assessment specific to your application
-- Legal review appropriate to your jurisdiction
+See **[`docs/compliance-mapping.md`](./docs/compliance-mapping.md)** for a full breakdown mapping the HIPAA Technical Safeguards (164.312) to specific AWS resources configured in these modules.
 
-What this repo does: give you a tested, documented starting point for the
-technical safeguards, so you're not researching "what's the right KMS key
-policy for PHI" from scratch on every project.
+---
 
-## Compliance mapping
+## What This is Not
 
-See [`docs/compliance-mapping.md`](./docs/compliance-mapping.md) for a full
-breakdown of which HIPAA Technical Safeguard (and equivalent PIPA/PIPEDA
-provisions) each module addresses.
+This repository does not make your application "HIPAA compliant" by itself. No infrastructure code can. You still need:
+- Signed Business Associate Agreements (BAAs) with AWS and every third-party vendor.
+- Organizational policies, staff training, and breach notification procedures.
+- A real risk assessment specific to your application and deployment.
+- Legal review appropriate to your jurisdiction.
+
+---
 
 ## Contributing
 
-This project is in active early development. Issues and PRs welcome,
-especially:
+We welcome contributions from the healthcare security and developer communities! Open issues and PRs to:
+- Add more clinical AI pattern architectures.
+- Improve compliance checks and automated security validations.
 
-- Azure and GCP implementations of existing AWS modules
-- Real-world pattern write-ups from your own healthcare AI builds
-- Corrections to compliance mapping — if something is wrong, open an issue
+---
 
 ## License
 
-MIT
+MIT - See [LICENSE](LICENSE) for details.
