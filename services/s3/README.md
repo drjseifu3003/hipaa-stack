@@ -13,7 +13,7 @@ This service provisions an Amazon S3 bucket configured for secure, HIPAA-complia
 
 ```hcl
 module "s3" {
-  source = "github.com/momentum-ai/hipaa-stack//services/s3"
+  source = "github.com/drjseifu3003/hipaa-stack//services/s3"
 
   bucket_name         = "clinic-phi-records-prod"
   environment         = "production"

@@ -11,7 +11,7 @@ This service provisions an AWS Client VPN endpoint to allow developers, administ
 
 ```hcl
 module "vpn" {
-  source = "github.com/momentum-ai/hipaa-stack//services/vpn"
+  source = "github.com/drjseifu3003/hipaa-stack//services/vpn"
 
   name_prefix         = "health-prod"
   environment         = "production"

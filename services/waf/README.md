@@ -11,7 +11,7 @@ This service provisions an AWS WAFv2 Web Access Control List (Web ACL) configure
 
 ```hcl
 module "waf" {
-  source = "github.com/momentum-ai/hipaa-stack//services/waf"
+  source = "github.com/drjseifu3003/hipaa-stack//services/waf"
 
   name_prefix = "health-prod"
   environment = "production"

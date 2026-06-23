@@ -11,7 +11,7 @@ This service configures centralized API activity logging and auditing on AWS, al
 
 ```hcl
 module "cloudtrail" {
-  source = "github.com/momentum-ai/hipaa-stack//services/cloudtrail"
+  source = "github.com/drjseifu3003/hipaa-stack//services/cloudtrail"
 
   name_prefix = "health-prod"
   environment = "production"

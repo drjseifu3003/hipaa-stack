@@ -11,7 +11,7 @@ This service provisions an Amazon HealthLake FHIR (Fast Healthcare Interoperabil
 
 ```hcl
 module "healthlake" {
-  source = "github.com/momentum-ai/hipaa-stack//services/healthlake"
+  source = "github.com/drjseifu3003/hipaa-stack//services/healthlake"
 
   name_prefix                = "health-prod"
   environment                = "production"

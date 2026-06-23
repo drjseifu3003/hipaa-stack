@@ -11,7 +11,7 @@ This service provisions secure secret containers in AWS Secrets Manager to store
 
 ```hcl
 module "db_secrets" {
-  source = "github.com/momentum-ai/hipaa-stack//services/secretsmanager"
+  source = "github.com/drjseifu3003/hipaa-stack//services/secretsmanager"
 
   name_prefix = "health-prod"
   environment = "production"

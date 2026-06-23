@@ -11,7 +11,7 @@ This service configures AWS GuardDuty to perform continuous security threat scan
 
 ```hcl
 module "guardduty" {
-  source = "github.com/momentum-ai/hipaa-stack//services/guardduty"
+  source = "github.com/drjseifu3003/hipaa-stack//services/guardduty"
 
   environment                  = "production"
   enable_detector              = true

@@ -12,7 +12,7 @@ This service provisions an encrypted, Multi-AZ PostgreSQL Database on Amazon RDS
 
 ```hcl
 module "rds" {
-  source = "github.com/momentum-ai/hipaa-stack//services/rds"
+  source = "github.com/drjseifu3003/hipaa-stack//services/rds"
 
   name_prefix         = "health-prod"
   environment         = "production"

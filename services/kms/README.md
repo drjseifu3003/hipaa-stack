@@ -10,7 +10,7 @@ This service provisions Customer Managed Keys (CMKs) in AWS KMS to encrypt datab
 
 ```hcl
 module "kms" {
-  source = "github.com/momentum-ai/hipaa-stack//services/kms"
+  source = "github.com/drjseifu3003/hipaa-stack//services/kms"
 
   name_prefix = "health-prod"
   environment = "production"

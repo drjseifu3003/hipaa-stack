@@ -11,7 +11,7 @@ This service provisions centralized backups in AWS Backup, allowing automated sn
 
 ```hcl
 module "backup" {
-  source = "github.com/momentum-ai/hipaa-stack//services/backup"
+  source = "github.com/drjseifu3003/hipaa-stack//services/backup"
 
   name_prefix           = "health-prod"
   environment           = "production"

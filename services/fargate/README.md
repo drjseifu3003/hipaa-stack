@@ -11,7 +11,7 @@ This service provisions an Amazon ECS Cluster running containerized application 
 
 ```hcl
 module "fargate" {
-  source = "github.com/momentum-ai/hipaa-stack//services/fargate"
+  source = "github.com/drjseifu3003/hipaa-stack//services/fargate"
 
   name_prefix        = "health"
   environment        = "production"

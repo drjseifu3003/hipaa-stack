@@ -11,7 +11,7 @@ This service provisions a secure, multi-AZ network environment on AWS designed t
 
 ```hcl
 module "vpc" {
-  source = "github.com/momentum-ai/hipaa-stack//services/vpc"
+  source = "github.com/drjseifu3003/hipaa-stack//services/vpc"
 
   name_prefix = "health-prod"
   environment = "production"

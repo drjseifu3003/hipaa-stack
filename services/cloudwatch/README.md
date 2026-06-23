@@ -11,7 +11,7 @@ This service provisions Amazon CloudWatch Log Groups configured with log retenti
 
 ```hcl
 module "cloudwatch" {
-  source = "github.com/momentum-ai/hipaa-stack//services/cloudwatch"
+  source = "github.com/drjseifu3003/hipaa-stack//services/cloudwatch"
 
   name_prefix        = "health-prod"
   environment        = "production"
