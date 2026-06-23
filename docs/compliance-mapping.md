@@ -10,10 +10,10 @@ The diagram below visualizes how the different modules of the HIPAA Stack isolat
 
 ```mermaid
 graph TD
-    classDef safe fill:#e2e3e5,stroke:#383d41,stroke-width:2px;
-    classDef enc fill:#cff4fc,stroke:#087990,stroke-width:2px;
-    classDef audit fill:#fff3cd,stroke:#664d03,stroke-width:2px;
-    classDef net fill:#d1e7dd,stroke:#0f5132,stroke-width:2px;
+    classDef safe fill:#f3f4f6cc,stroke:#4b5563,stroke-width:2px,color:#1f2937;
+    classDef enc fill:#e0f2fecc,stroke:#0284c7,stroke-width:2px,color:#0369a1;
+    classDef audit fill:#fef9c3cc,stroke:#ca8a04,stroke-width:2px,color:#854d0e;
+    classDef net fill:#dcfce7cc,stroke:#16a34a,stroke-width:2px,color:#15803d;
 
     subgraph VPC ["Network Security Boundaries (164.312 a 1)"]
         WAF["AWS WAF v2 (WAF ACL rules)"]:::net

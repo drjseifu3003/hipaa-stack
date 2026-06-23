@@ -12,9 +12,9 @@ The modules in this library cooperate to create a secure, multi-layered environm
 
 ```mermaid
 graph TD
-    classDef main fill:#f8f9fa,stroke:#343a40,stroke-width:2px;
-    classDef shield fill:#cfe2ff,stroke:#0d6efd,stroke-width:2px;
-    classDef key fill:#fff3cd,stroke:#ffc107,stroke-width:2px;
+    classDef main fill:#f8f9facc,stroke:#343a40,stroke-width:2px,color:#212529;
+    classDef shield fill:#e0f2fecc,stroke:#0284c7,stroke-width:2px,color:#0369a1;
+    classDef key fill:#fef9c3cc,stroke:#ca8a04,stroke-width:2px,color:#854d0e;
     
     Internet((Internet)) --> ALB["Application Load Balancer"]:::shield
     ALB --> WAF["AWS WAF v2 Shield"]:::shield
