@@ -14,16 +14,21 @@ Built from real-world clinical client work: AI voice triage systems, legacy EMR 
 
 ## Service Status (AWS)
 
-| Problem / Domain | Status | Included AWS Services / Resources |
+| Service Name | Status | Included AWS Services / Resources |
 | :--- | :---: | :--- |
-| **Network Isolation** | ✅ Available | VPC, Private Subnets, NAT Gateways, Route Tables, WAFv2, Client VPN |
-| **Encrypted Storage** | ✅ Available | S3 Buckets, KMS CMK, S3 Versioning, Access Logging, AWS Backup |
-| **Secrets Management** | ✅ Available | KMS Keys (with Rotation), Secrets Manager Secrets |
-| **Audit Logging** | ✅ Available | CloudTrail Trail (Management & Data events), CloudWatch Logs, GuardDuty |
-| **Database / Healthcare Store** | ✅ Available | RDS PostgreSQL, AWS HealthLake (FHIR Datastore) |
-| **Compute Services** | ✅ Available | ECS Fargate Serverless Compute, Security Groups, IAM Task Roles |
-| **Identity & Access** | 🔜 Coming Soon | IAM Policies, IAM Roles, Least-privilege Access Control |
-| **AI Agent Guardrails** | 🔜 Coming Soon | Bedrock Guardrails, Content Filtering |
+| **[`services/vpc`](./services/vpc)** | ✅ Available | VPC, Private Subnets, NAT Gateways, Route Tables, VPC Endpoints |
+| **[`services/vpn`](./services/vpn)** | ✅ Available | AWS Client VPN, Network Associations, Client Authorizations |
+| **[`services/waf`](./services/waf)** | ✅ Available | AWS WAFv2, Web ACL, Managed rules (SQLi, OWASP CRS) |
+| **[`services/s3`](./services/s3)** | ✅ Available | S3 Buckets, SSE-KMS, Versioning, Access Logging, Bucket Policies |
+| **[`services/kms`](./services/kms)** | ✅ Available | Customer Managed KMS Keys (with Rotation), Key Policies |
+| **[`services/secretsmanager`](./services/secretsmanager)** | ✅ Available | Secrets Manager Secrets, KMS Encryption |
+| **[`services/cloudtrail`](./services/cloudtrail)** | ✅ Available | CloudTrail Trail (Management & Data events), Log File Validation |
+| **[`services/cloudwatch`](./services/cloudwatch)** | ✅ Available | CloudWatch Logs, Log Groups, Log Encryption |
+| **[`services/guardduty`](./services/guardduty)** | ✅ Available | GuardDuty Detector, Threat Intelligence |
+| **[`services/backup`](./services/backup)** | ✅ Available | AWS Backup Vault, Backup Plans, schedules, Backup Selection |
+| **[`services/rds`](./services/rds)** | ✅ Available | RDS PostgreSQL, Storage Encryption, Multi-AZ, Performance Insights |
+| **[`services/fargate`](./services/fargate)** | ✅ Available | ECS Fargate Cluster, Task Definitions, ECS Services, task roles |
+| **[`services/healthlake`](./services/healthlake)** | ✅ Available | HealthLake FHIR R4 Datastore, SMART on FHIR authorization |
 
 ---
 
@@ -42,37 +47,36 @@ Infrastructure is necessary but not sufficient. A perfectly encrypted VPC doesn'
 ## Quick Start Example (AWS)
 
 ```hcl
-# 1. Setup isolated networking and WAF protection
-module "network" {
-  source = "github.com/momentum-ai/hipaa-stack//services/network-isolation/aws"
-
-  name_prefix             = "clinic-prod"
-  environment             = "production"
-  aws_region              = "us-east-1"
-  vpc_cidr                = "10.0.0.0/16"
-  enable_nat_gateway      = true
-  enable_waf              = true
+# 1. Setup secure KMS keys
+module "kms" {
+  source      = "github.com/momentum-ai/hipaa-stack//services/kms"
+  name_prefix = "clinic-prod"
+  environment = "production"
+  description = "Encryption key for PHI"
+  key_alias   = "phi-key"
 }
 
-# 2. Setup S3 storage for PHI with encryption & automatic daily backups
+# 2. Setup isolated networking VPC
+module "vpc" {
+  source      = "github.com/momentum-ai/hipaa-stack//services/vpc"
+  name_prefix = "clinic-prod"
+  environment = "production"
+}
+
+# 3. Setup S3 storage for PHI with encryption
 module "storage" {
-  source = "github.com/momentum-ai/hipaa-stack//services/encrypted-storage/aws"
-
-  name_prefix         = "clinic-prod"
-  environment         = "production"
-  bucket_name         = "clinic-phi-records-bucket"
-  logging_bucket_name = "clinic-logs-bucket"
-  enable_backup       = true
+  source      = "github.com/momentum-ai/hipaa-stack//services/s3"
+  bucket_name = "clinic-phi-records-bucket"
+  environment = "production"
+  kms_key_arn = module.kms.kms_key_arn
 }
 
-# 3. Setup central audit trails & GuardDuty threat detection
-module "audit_logs" {
-  source = "github.com/momentum-ai/hipaa-stack//services/audit-logging/aws"
-
-  name_prefix        = "clinic-prod"
-  environment        = "production"
-  log_retention_days = 365
-  enable_guardduty   = true
+# 4. Setup audit trail
+module "cloudtrail" {
+  source      = "github.com/momentum-ai/hipaa-stack//services/cloudtrail"
+  name_prefix = "clinic-prod"
+  environment = "production"
+  kms_key_arn = module.kms.kms_key_arn
 }
 ```
 
@@ -90,7 +94,7 @@ See **[`docs/compliance-mapping.md`](./docs/compliance-mapping.md)** for a full 
 
 This repository does not make your application "HIPAA compliant" by itself. No infrastructure code can. You still need:
 - Signed Business Associate Agreements (BAAs) with AWS and every third-party vendor.
-- Organizational policies, staff training, and breach notification procedures.
+- Process controls, staff training, and breach notification procedures.
 - A real risk assessment specific to your application and deployment.
 - Legal review appropriate to your jurisdiction.
 
@@ -100,7 +104,7 @@ This repository does not make your application "HIPAA compliant" by itself. No i
 
 We welcome contributions from the healthcare security and developer communities! Open issues and PRs to:
 - Add more clinical AI pattern architectures.
-- Improve compliance checks and automated security validations.
+- Improve compliance checks and automated AWS security validations.
 
 ---
 
