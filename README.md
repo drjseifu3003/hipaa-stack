@@ -1,108 +1,95 @@
-# HIPAAStack
+# HIPAA Stack (AWS)
 
-**Multi-cloud, compliance-first infrastructure for healthcare AI systems.**
+**An production-ready, compliance-first infrastructure library for secure digital health systems.**
 
-HIPAAStack provides battle-tested infrastructure modules organized around
-*compliance problems* — not cloud service names — so the same module set
-works whether you're deploying on AWS, Azure, or GCP. Each module is built
-to satisfy specific HIPAA / PIPA / PIPEDA technical safeguards, with the
-reasoning documented inline, not just the configuration.
+`hipaa-stack` provides modular, security-hardened Infrastructure as Code (IaC) blueprints engineered specifically to satisfy HIPAA / HITECH Technical Safeguards on Amazon Web Services (AWS). It is designed for founders and engineering teams building in the clinical, digital health, and medical AI space.
 
-Built from real client work: AI voice triage systems, EMR integrations with
-no public API, multi-tenant clinical platforms, and AI agent systems
-handling PHI directly.
+---
 
-## Why problem-first, not service-first
+## Architectural Blueprint
 
-Most infrastructure-as-code libraries for healthcare are organized by cloud
-service name — "here's our S3 module, here's our KMS module." That's useful
-if you already know AWS maps "encrypted storage" to S3+KMS. It's a dead end
-if you're on Azure or GCP, or if you're a developer who doesn't have an AWS
-background and just knows you need "a place to store files that's
-encrypted and HIPAA-safe."
+The modules in this library cooperate to create a secure, multi-layered environment for clinical workloads:
 
-HIPAAStack is organized the other way: pick the **problem** you're solving
-— encrypted storage, network isolation, audit logging, AI agent guardrails
-— and get the implementation for whichever cloud you're actually on.
+```mermaid
+graph TD
+    classDef main fill:#f8f9facc,stroke:#343a40,stroke-width:2px,color:#212529;
+    classDef shield fill:#e0f2fecc,stroke:#0284c7,stroke-width:2px,color:#0369a1;
+    classDef key fill:#fef9c3cc,stroke:#ca8a04,stroke-width:2px,color:#854d0e;
+    
+    Internet((Internet)) --> ALB["Application Load Balancer"]:::shield
+    ALB --> WAF["AWS WAF v2 Shield"]:::shield
+    
+    subgraph VPC ["AWS VPC Security Envelope"]
+        WAF --> AppCompute["ECS Fargate Tasks (Private Subnet)"]:::main
+        VPN["AWS Client VPN"]:::shield --> AppCompute
+        AppCompute --> PrivateLink["VPC PrivateLink Endpoint"]:::shield
+        PrivateLink --> KMS["AWS KMS CMK (Key Rotation)"]:::key
+        PrivateLink --> RDS["RDS PostgreSQL (Multi-AZ)"]:::key
+        PrivateLink --> S3["S3 PHI Storage"]:::key
+    end
+```
 
-## Module status
+---
 
-| Problem | AWS | Azure | GCP |
-|---|---|---|---|
-| Network Isolation | ✅ Available | 🔜 Coming Soon | 🔜 Coming Soon |
-| Encrypted Storage | 🔜 Coming Soon | 🔜 Coming Soon | 🔜 Coming Soon |
-| Secrets Management | 🔜 Coming Soon | 🔜 Coming Soon | 🔜 Coming Soon |
-| Audit Logging | 🔜 Coming Soon | 🔜 Coming Soon | 🔜 Coming Soon |
-| Identity & Access | 🔜 Coming Soon | 🔜 Coming Soon | 🔜 Coming Soon |
-| AI Agent Guardrails | 🔜 Coming Soon | 🔜 Coming Soon | 🔜 Coming Soon |
+## Hardened AWS Service Blueprints
 
-AWS modules are being built and validated first. Azure and GCP equivalents
-will follow the same problem-first structure once each AWS module is
-production-tested.
+| Modular Service | Compliance Coverage | Configured Security Features |
+| :--- | :--- | :--- |
+| 🛡️ **[services/vpc](./services/vpc)** | Network Isolation | Private subnets, VPC Flow Logs, and Interface Endpoints |
+| 🔑 **[services/kms](./services/kms)** | Cryptographic Control | Customer Managed Key (CMK) with enforced annual rotation |
+| 🗄️ **[services/s3](./services/s3)** | Immutable Storage | SSE-KMS, Versioning, TLS-only policy, access logging |
+| 🗃️ **[services/rds](./services/rds)** | Secure Database | Encrypted Multi-AZ PostgreSQL, IAM Authentication |
+| 🩺 **[services/healthlake](./services/healthlake)** | Standardized Exchange | Native FHIR R4 clinical datastore with KMS encryption |
+| 🚀 **[services/fargate](./services/fargate)** | Isolated Compute | ECS Fargate Cluster, private subnets, CloudWatch logging |
+| 🛡️ **[services/vpn](./services/vpn)** | Secure Ingress | Client VPN endpoint, TLS certificates, logging |
+| 🎛️ **[services/waf](./services/waf)** | Exploit Defense | AWS WAFv2 ACL with SQLi and XSS protection rules |
+| 📜 **[services/cloudtrail](./services/cloudtrail)** | Complete Auditing | Management and S3 data-plane event logging, validation |
+| 📈 **[services/cloudwatch](./services/cloudwatch)** | Encryption Logs | KMS-encrypted Log Groups, 365-day retention policy |
+| 🔏 **[services/secretsmanager](./services/secretsmanager)** | Secret Isolation | KMS-encrypted credentials, automated rotation |
+| 🚨 **[services/guardduty](./services/guardduty)** | Threat Intelligence | Continuous intelligent scanning and alert processing |
+| 💾 **[services/backup](./services/backup)** | Disaster Recovery | Centralized backup plans, S3/RDS backup vault |
 
-## Beyond infrastructure — the application layer
+---
 
-Infrastructure is necessary but not sufficient. A perfectly encrypted VPC
-doesn't stop a developer from pasting a patient's name into an AI prompt.
-The `patterns/` and `skill/` directories cover the application-layer
-problems infrastructure-as-code can't solve on its own:
-
-- **`patterns/emr-without-public-api.md`** — how to integrate with EMRs
-  that don't expose a developer API (more common than you'd think — most
-  IaC libraries assume FHIR/API access exists)
-- **`patterns/deterministic-triage-scoring.md`** — keeping AI out of
-  clinical judgment calls while still using it for conversation and data
-  collection
-- **`patterns/phi-tokenization-for-llm-prompts.md`** — preventing PHI from
-  ever reaching an LLM prompt or API call in the first place
-- **`patterns/voice-ai-phi-handling.md`** — specific guidance for Vapi/
-  Twilio-style voice AI systems that handle PHI in real time
-- **`skill/SKILL.md`** — a Claude/Cursor-compatible skill file enforcing
-  these patterns automatically during development
-
-## Quick start
+## Usage Example
 
 ```hcl
-module "network" {
-  source = "github.com/yourname/hipaastack//modules/network-isolation/aws"
-
-  name_prefix = "clinic-prod"
+# 1. Spin up the cryptographic CMK
+module "compliance_kms" {
+  source      = "github.com/drjseifu3003/hipaa-stack//services/kms"
+  name_prefix = "care-prod"
   environment = "production"
-  aws_region  = "ca-central-1"
+  description = "Primary key for clinic data encryption"
+  key_alias   = "phi-encryption-key"
+}
+
+# 2. Build the secure network boundaries
+module "compliance_vpc" {
+  source      = "github.com/drjseifu3003/hipaa-stack//services/vpc"
+  name_prefix = "care-prod"
+  environment = "production"
+}
+
+# 3. Provision encrypted object storage for patient reports
+module "compliance_storage" {
+  source      = "github.com/drjseifu3003/hipaa-stack//services/s3"
+  bucket_name = "clinical-patient-records-prod"
+  environment = "production"
+  kms_key_arn = module.compliance_kms.kms_key_arn
 }
 ```
 
-See each module's own README for full usage and a working example.
+---
 
-## What this is not
+## Developer Integration & Guidelines
 
-This repo does not make your application "HIPAA compliant" by itself. No
-infrastructure code can. You still need:
+To automate these compliance checks during development, integrate our developer skill configuration:
 
-- Signed Business Associate Agreements (BAAs) with every subprocessor
-- Organizational policy, staff training, and breach notification procedures
-- A real risk assessment specific to your application
-- Legal review appropriate to your jurisdiction
+* **[docs/compliance-mapping.md](./docs/compliance-mapping.md)** — Explains the direct mapping of HIPAA citations to each Terraform module.
+* **[skill/SKILL.md](./skill/SKILL.md)** — Configures Cursor or Claude Desktop to automatically validate AWS configurations against HIPAA rules.
 
-What this repo does: give you a tested, documented starting point for the
-technical safeguards, so you're not researching "what's the right KMS key
-policy for PHI" from scratch on every project.
-
-## Compliance mapping
-
-See [`docs/compliance-mapping.md`](./docs/compliance-mapping.md) for a full
-breakdown of which HIPAA Technical Safeguard (and equivalent PIPA/PIPEDA
-provisions) each module addresses.
-
-## Contributing
-
-This project is in active early development. Issues and PRs welcome,
-especially:
-
-- Azure and GCP implementations of existing AWS modules
-- Real-world pattern write-ups from your own healthcare AI builds
-- Corrections to compliance mapping — if something is wrong, open an issue
+---
 
 ## License
 
-MIT
+This repository is licensed under the MIT License. See [LICENSE](LICENSE) for details.
