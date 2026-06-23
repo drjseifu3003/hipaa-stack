@@ -43,59 +43,77 @@ Data becomes PHI when **any** of these appear alongside health information:
 
 ## AWS HIPAA-Eligible Services: Configuration Requirements
 
-You must sign a **Business Associate Addendum (BAA)** with AWS via AWS Artifact before processing PHI. Signing the BAA does not make the services compliant by default; you must configure them in accordance with the technical safeguards of the Security Rule:
+You must sign a **Business Associate Addendum (BAA)** with AWS via AWS Artifact before processing PHI. Signing the BAA does not make the services compliant by default; you must configure each service in accordance with the technical safeguards of the Security Rule:
 
-### 1. Compute Services
-- **Amazon EC2**: Must use encrypted EBS volumes (AES-256 via KMS). Direct SSH access must be disabled; use AWS Systems Manager (SSM) Session Manager with Session Encryption enabled.
-- **AWS Lambda**: Must be attached to a Private Subnet in your VPC. Environment variables must NOT contain raw PHI or secrets (use Secrets Manager). Transient storage (`/tmp`) containing PHI must be overwritten or cleared before execution ends.
-- **Amazon ECS / EKS**: Enable Container Insights for auditing. Ensure container stdout/stderr logs do not contain raw PHI. Configure AWS Fargate as the execution launch type to guarantee kernel-level isolation. EKS control plane logging must be enabled and sent to KMS-encrypted CloudWatch Log Groups.
-- **AWS Batch**: Configure compute environments inside private subnets. Ensure Job definitions and parameters do not contain PHI.
-
-### 2. Storage Services
-- **Amazon S3**:
-  - Enforce S3 Public Access Block at bucket and account levels.
-  - Enforce server-side encryption via KMS with Customer Managed Keys (SSE-KMS) and S3 Bucket Keys enabled.
-  - Enforce SSL/TLS in transit via S3 Bucket Policy (deny if `aws:SecureTransport = false`).
-  - Enable Object Versioning and Object Lock (WORM) for audit logs.
-  - Deliver access logs to a separate logging bucket.
-- **Amazon EBS**: All volumes must be encrypted at rest using a Customer Managed Key (CMK) in KMS.
-- **Amazon EFS / Amazon FSx**: Enforce transit encryption and encrypt at rest using KMS. Access must be managed via IAM policies and security groups.
-- **AWS Backup**: Enable backup vaults with KMS encryption and vault locks to prevent unauthorized recovery or deletion of backups.
-
-### 3. Database Services
-- **Amazon RDS (PostgreSQL, MySQL, Aurora)**:
-  - Enforce storage encryption using KMS CMK.
-  - Enforce SSL connections for all client database connections (`rds.force_ssl = 1` parameter).
-  - Enable Performance Insights and encrypt them with KMS.
-  - Enable export of engine logs (e.g. `postgresql`, `audit`) to CloudWatch Logs.
-  - Disable public accessibility; deploy only in DB subnet groups referencing private subnets.
-- **Amazon DynamoDB**: Use DynamoDB encryption at rest with KMS Customer Managed Keys. Enable Point-in-Time Recovery (PITR).
-- **Amazon ElastiCache (Redis OSS)**: Enable encryption in transit (auth token required) and encryption at rest with KMS. Deploy inside private subnets.
-
-### 4. Networking & Routing
-- **Amazon VPC**:
-  - Enable VPC Flow Logs, routing traffic logs to a KMS-encrypted CloudWatch Log Group.
-  - Implement private and public subnets across multiple AZs.
-  - Set up VPC Endpoint Interfaces (AWS PrivateLink) for all AWS services (S3, KMS, Secrets Manager, Bedrock) to keep traffic within the AWS backbone.
-- **AWS WAFv2**: Associate WAF Web ACLs with Application Load Balancers (ALBs) or API Gateways, configuring rule sets for SQL injection protection, Cross-Site Scripting (XSS), and common vulnerabilities.
-- **AWS Client VPN / Site-to-Site VPN**: Force client connections to use certificate-based authentication or MFA. Log all connection logs to CloudWatch.
-
-### 5. Security & Governance
-- **AWS KMS**: Enable automatic annual key rotation (`enable_key_rotation = true`). Restrict key policies to root IAM and specific service roles using conditions (e.g., `aws:sourceVpc` or `aws:PrincipalArn`).
+- **Amazon Elastic Compute Cloud (EC2)**: EBS encryption via KMS CMK is mandatory. SSH ports (22) must be closed; manage instances using AWS Systems Manager (SSM) Session Manager with Session Encryption enabled via KMS.
+- **AWS Lambda**: Functions processing PHI must run inside private subnets of your VPC. Environment variables must never contain raw PHI or API keys (retrieve these from AWS Secrets Manager). Overwrite ephemeral memory (`/tmp`) containing PHI before function execution ends.
+- **Amazon Elastic Container Service (ECS)**: Enable Container Insights for auditing. Ensure container stdout/stderr logs do not contain raw PHI. Configure AWS Fargate as the execution launch type to guarantee kernel-level isolation.
+- **Amazon Elastic Kubernetes Service (EKS)**: Enable control plane logging (API server, audit logs, controller manager) and stream to KMS-encrypted CloudWatch Log Groups. Use VPC CNI to enforce network security policies.
+- **AWS Fargate**: Serverless compute engine that must be deployed inside private subnets with no public IPs assigned. Use security groups to restrict container ingress.
+- **AWS Batch**: Ensure jobs run in private subnets. Job parameters, names, or environment variables must not contain PHI.
+- **AWS Elastic Beanstalk**: Ensure local EC2 instances are encrypted and run in private subnets, with all traffic terminating at an HTTPS listener on an Application Load Balancer.
+- **Amazon Simple Storage Service (S3)**: Enable SSE-KMS with Customer Managed Keys (CMK), enforce SSL-only transport using a bucket policy (`aws:SecureTransport = false` denied), configure S3 Object Versioning, enable Public Access Block, and direct server access logs to a separate logging bucket.
+- **Amazon Elastic Block Store (EBS)**: All block store volumes attached to EC2 instances must be encrypted at rest using a Customer Managed Key in KMS.
+- **Amazon Elastic File System (EFS)**: Enable encryption at rest via KMS and encryption in transit when mounting the file system using EFS mount helper.
+- **Amazon FSx (All Variants)**: Enforce in-transit encryption and encryption at rest with KMS. Access must be managed via IAM policies and security groups.
+- **AWS Backup**: Create daily/weekly backup plans for database and storage resources. Store backups in a secure Backup Vault encrypted with KMS, and configure Vault Lock to prevent unauthorized recovery or deletion.
+- **Amazon S3 Glacier**: Encrypt archives with KMS. Set up Vault Lock policies to enforce regulatory data retention (e.g., WORM rules).
+- **AWS Storage Gateway**: Ensure local gateway appliances encrypt local cache storage. Encrypt all data uploaded to AWS using KMS.
+- **Amazon Relational Database Service (RDS)**: Enable storage volume encryption using KMS CMK. Enforce SSL connections (`rds.force_ssl = 1` in DB parameter group). Deploy in DB subnet groups referencing private subnets only. Enable Performance Insights and logs exports (e.g. `postgresql`, `audit`) to CloudWatch Logs.
+- **Amazon Aurora**: Encrypt database storage and cluster volumes with KMS CMK. Enable Aurora Database Activity Streams for auditing. Disable public accessibility.
+- **Amazon DynamoDB**: Enforce DynamoDB encryption at rest with KMS CMKs. Enable Point-in-Time Recovery (PITR) for backup. Enable VPC Endpoints for private database access.
+- **Amazon ElastiCache**: Enable both encryption in transit (requires Redis AUTH token) and encryption at rest with KMS. Deploy inside private subnets.
+- **Amazon MemoryDB for Redis**: Enable TLS connections, Redis ACLs, and encryption at rest using KMS.
+- **Amazon DocumentDB**: Enforce storage encryption using KMS CMK. Enable audit logs (DDL, DML events) and export them to CloudWatch.
+- **Amazon Neptune**: Encrypt Neptune graph databases at rest using KMS. Enforce TLS for connections.
+- **Amazon Keyspaces**: Enforce encryption at rest via KMS CMK. Connect using TLS 1.2.
+- **Amazon Redshift**: Encrypt cluster storage using KMS. Enable audit logging to track query activities.
+- **Amazon Timestream**: All data is automatically encrypted. Configure fine-grained IAM policies to restrict access to queries.
+- **Amazon Virtual Private Cloud (VPC)**: Enable VPC Flow Logs, routing traffic logs to a KMS-encrypted CloudWatch Log Group. Set up private subnets for compute/databases and public subnets only for load balancers.
+- **Elastic Load Balancing (ELB)**: Configure HTTPS listeners on Application or Network Load Balancers with secure SSL policies (e.g., `ELBSecurityPolicy-TLS13-1-2`). Log access requests to S3.
+- **Amazon CloudFront**: Enforce HTTPS for viewer connections and origin connections. Set up CloudFront Access Logs.
+- **Amazon Route 53**: Manage DNS queries. Do not include patient identifiers or clinical terms in hostnames or record names.
+- **AWS Direct Connect**: Establish private connections from hospital networks. Use MACsec (802.1AE) or IPSec over Direct Connect to encrypt data in transit.
+- **AWS Client VPN**: Force client connections to use certificate-based authentication or MFA. Log all connection logs to CloudWatch.
+- **AWS Site-to-Site VPN**: Set up IPSec VPN tunnels with AES-256 and DH groups to connect hospital networks to AWS VPCs.
+- **AWS Transit Gateway**: Route network traffic privately across multiple AWS accounts and VPCs. Enable Transit Gateway Flow Logs.
+- **AWS PrivateLink**: Set up VPC Endpoint Interfaces for all AWS services (S3, KMS, Secrets Manager, Bedrock) to keep traffic within the AWS backbone.
+- **AWS Identity and Access Management (IAM)**: Enforce least privilege. Require Multi-Factor Authentication (MFA) for all users. Do not use root accounts for daily activities.
+- **AWS Key Management Service (AWS KMS)**: Enable automatic annual key rotation. Restrict key policies to root IAM and specific service roles using conditions (e.g., `aws:sourceVpc` or `aws:PrincipalArn`).
 - **AWS Secrets Manager**: Encrypt secrets with KMS CMK. Enable automatic secret rotation. Disable access to raw secret values in logging.
-- **AWS CloudTrail**:
-  - Configure a multi-region trail with Log File Validation enabled.
-  - Capture both management events and S3 data events for S3 buckets containing PHI.
-  - Deliver trails to an encrypted S3 bucket.
+- **AWS Directory Service**: Integrate active directory with AWS. Enable LDAPS (LDAP over SSL) for encrypted authentication traffic.
+- **AWS CloudTrail**: Configure a multi-region trail with Log File Validation enabled. Capture both management events and S3 data events for S3 buckets containing PHI. Deliver trails to an encrypted S3 bucket.
+- **Amazon CloudWatch**: Use CloudWatch Logs with KMS encryption enabled. Set log retention to at least 365 days. Do not log raw PHI in log streams.
+- **AWS Config**: Enable configuration recorder to track all resource changes for audit compliance.
+- **AWS WAF**: Associate WAF Web ACLs with ALBs or API Gateways, configuring rule sets for SQL injection protection, Cross-Site Scripting (XSS), and common vulnerabilities.
 - **Amazon GuardDuty**: Enable GuardDuty in all active regions. Route threat findings to Security Hub or SNS for real-time compliance alerting.
-
-### 6. Analytics & AI/ML
+- **AWS Security Hub**: Enable Security Hub and run AWS Security Best Practices and CIS benchmarks.
+- **Amazon Inspector**: Configure automatic vulnerability scans on EC2 instances and ECR container images.
+- **AWS Certificate Manager (ACM)**: Generate and renew SSL certificates for HTTPS listeners. Use keys with secure algorithms.
+- **AWS Firewall Manager**: Centralize firewall rule administration across AWS accounts.
+- **AWS Shield**: Enable Shield Advanced for DDoS protection on public entrypoints.
+- **Amazon Athena**: Encrypt query results stored in S3 using KMS. Enable workgroup settings to enforce encryption.
+- **Amazon EMR**: Encrypt data in transit using TLS and encrypt data at rest (S3, HDFS, local disks) using KMS CMK.
+- **Amazon OpenSearch Service**: Enforce HTTPS, enable node-to-node encryption, and encrypt data at rest with KMS.
+- **AWS Glue**: Encrypt Glue Data Catalog, connection passwords, metadata, and ETL job bookmark logs using KMS.
+- **AWS Lake Formation**: Implement fine-grained access control on database columns and rows containing PHI.
+- **Amazon MSK**: Enforce TLS encryption in transit (client-to-broker and broker-to-broker) and encryption at rest with KMS.
+- **Amazon Kinesis**: Enable server-side encryption (SSE) using KMS CMK. Enforce HTTPS/TLS when publishing or consuming.
+- **Amazon SageMaker**: Encrypt notebooks, training jobs, and endpoint instances with KMS. Enforce network isolation in training containers (disable internet egress).
 - **Amazon Bedrock**: Ensure data protection policies prevent model training on patient prompt inputs. Establish Bedrock Guardrails to redact PII/PHI in prompt inputs and model outputs. Access Bedrock via VPC PrivateLink Interface Endpoints.
 - **AWS HealthLake**: Deploy datastores using FHIR R4. Encrypt all clinical data with KMS Customer Managed Keys. Enable SMART on FHIR authorization if integrating with external client apps.
-- **Amazon SageMaker**: Encrypt notebooks, training jobs, and endpoint instances with KMS. Enforce network isolation in training containers (disable internet egress).
-
-### 7. Application Integration
-- **Amazon SQS / SNS / EventBridge**: Enable server-side encryption (SSE) using KMS Customer Managed Keys. Enforce HTTPS/TLS when publishing or consuming.
+- **AWS HealthImaging**: Encrypt imported medical images (DICOM) and metadata with KMS. Retrieve images using secure APIs.
+- **AWS HealthOmics**: Encrypt genomic sequences and metadata with KMS. Manage access controls via IAM.
+- **Amazon Simple Queue Service (SQS)**: Enable server-side encryption (SSE) using KMS Customer Managed Keys. Enforce HTTPS/TLS when publishing or consuming.
+- **Amazon Simple Notification Service (SNS)**: Enable server-side encryption (SSE) using KMS Customer Managed Keys. Enforce HTTPS/TLS when publishing or consuming.
+- **Amazon EventBridge**: Configure fine-grained IAM policies for event buses. Ensure event details do not contain PHI.
+- **AWS Step Functions**: Enable CloudTrail logging for state machine executions. Ensure execution input and output payloads do not contain raw PHI.
+- **Amazon MQ**: Enforce TLS for connections and encrypt message brokers using KMS.
+- **AWS AppSync**: Enforce HTTPS, configure API authorization (Cognito User Pools or OAuth 2.0), and log resolver queries securely.
+- **AWS Systems Manager (SSM)**: Use SSM Session Manager for secure console access (disable raw SSH). Encrypt session transcripts via KMS and store them in S3.
+- **AWS CloudFormation**: Implement template scanning for security configurations.
+- **AWS Control Tower**: Enforce organizational guardrails (e.g., disallow public S3 buckets, enforce CloudTrail).
+- **AWS Service Catalog**: Control which approved, pre-configured HIPAA resources developers can deploy.
 
 ---
 
@@ -231,7 +249,7 @@ def create_audit_log(
         "event_id": str(uuid.uuid4()),
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "user_id": user_id,           # Who accessed it
-        "action": action.value,       # What they did
+        "action": action.value,       # What action
         "resource_type": resource_type, # Target resource class
         "resource_id": resource_id,   # Target identifier (UUID/Reference only)
         "source_ip": source_ip,
@@ -409,7 +427,7 @@ Validate all code changes using this checklist before merging PRs:
   - [ ] SSL connections are enforced on DB drivers.
   - [ ] `SecureTransport` is enforced on S3 bucket policies.
 - **Access Control**:
-  - [ ] RBAC check executes *before* fetching PHI.
+  - [ ] Access controls check executes *before* fetching PHI.
   - [ ] User ID, accessed resource ID, timestamp, and IP are audited for every PHI read/write.
   - [ ] No shared service credentials.
 - **Dev/Test**:

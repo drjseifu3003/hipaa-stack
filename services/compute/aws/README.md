@@ -1,6 +1,6 @@
-# AWS ECS Fargate Compute Module
+# AWS ECS Fargate Compute Service
 
-This module provisions an Amazon ECS Cluster running containerized application tasks via AWS Fargate. It aligns with **164.312(a)(1) Access Control** and **164.312(b) Audit Controls**.
+This service provisions an Amazon ECS Cluster running containerized application tasks via AWS Fargate. It aligns with **164.312(a)(1) Access Control** and **164.312(b) Audit Controls**.
 
 ## HIPAA Compliance Features
 - **Container Isolation**: Tasks run on dedicated serverless infrastructure in private VPC subnets. Public IPs are disabled.
@@ -12,7 +12,7 @@ This module provisions an Amazon ECS Cluster running containerized application t
 
 ```hcl
 module "fargate_service" {
-  source = "github.com/momentum-ai/hipaa-stack//modules/compute/aws"
+  source = "github.com/momentum-ai/hipaa-stack//services/compute/aws"
 
   name_prefix        = "health"
   environment        = "production"

@@ -1,6 +1,6 @@
-# AWS Encrypted Storage Module
+# AWS Encrypted Storage Service
 
-This module provisions an AWS S3 bucket configured for secure, HIPAA-compliant storage of Protected Health Information (PHI). It aligns with **164.312(a)(2)(iv) Encryption/Decryption**, **164.312(c)(1) Integrity**, and **164.308(a)(7)(ii)(A) Data Backup Plan**.
+This service provisions an AWS S3 bucket configured for secure, HIPAA-compliant storage of Protected Health Information (PHI). It aligns with **164.312(a)(2)(iv) Encryption/Decryption**, **164.312(c)(1) Integrity**, and **164.308(a)(7)(ii)(A) Data Backup Plan**.
 
 ## HIPAA Compliance Features
 - **Customer Managed Key (CMK) Encryption**: Forces Server-Side Encryption (SSE-KMS) with key rotation enabled using a dedicated KMS Key.
@@ -14,7 +14,7 @@ This module provisions an AWS S3 bucket configured for secure, HIPAA-compliant s
 
 ```hcl
 module "phi_storage" {
-  source = "github.com/momentum-ai/hipaa-stack//modules/encrypted-storage/aws"
+  source = "github.com/momentum-ai/hipaa-stack//services/encrypted-storage/aws"
 
   name_prefix         = "health-stack"
   environment         = "production"

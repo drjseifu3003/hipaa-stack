@@ -1,6 +1,6 @@
-# AWS Audit Logging Module
+# AWS Audit Logging Service
 
-This module configures centralized audit trail capture and monitoring on AWS, aligned with **164.312(b) Audit Controls** and **164.312(c)(2) Mechanism to Authenticate PHI**.
+This service configures centralized audit trail capture and monitoring on AWS, aligned with **164.312(b) Audit Controls** and **164.312(c)(2) Mechanism to Authenticate PHI**.
 
 ## HIPAA Compliance Features
 - **CloudTrail API Ingestion**: Captures all AWS API activities, including write operations, data-plane events (such as S3 file additions/downloads), and permission updates.
@@ -13,7 +13,7 @@ This module configures centralized audit trail capture and monitoring on AWS, al
 
 ```hcl
 module "audit_logs" {
-  source = "github.com/momentum-ai/hipaa-stack//modules/audit-logging/aws"
+  source = "github.com/momentum-ai/hipaa-stack//services/audit-logging/aws"
 
   name_prefix        = "health-stack"
   environment        = "production"

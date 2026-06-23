@@ -1,6 +1,6 @@
-# AWS Secrets Management Module
+# AWS Secrets Management Service
 
-This module provisions a secure encryption and secret storage environment in AWS to handle database credentials, API tokens, and private keys. It aligns with **164.312(a)(2)(iv) Encryption/Decryption** and **164.312(a)(1) Access Control**.
+This service provisions a secure encryption and secret storage environment in AWS to handle database credentials, API tokens, and private keys. It aligns with **164.312(a)(2)(iv) Encryption/Decryption** and **164.312(a)(1) Access Control**.
 
 ## HIPAA Compliance Features
 - **Key Rotation Enforced**: Automatically rotates the Customer Managed Key (CMK) once per year to reduce the risk of key compromise.
@@ -11,7 +11,7 @@ This module provisions a secure encryption and secret storage environment in AWS
 
 ```hcl
 module "app_secrets" {
-  source = "github.com/momentum-ai/hipaa-stack//modules/secrets-management/aws"
+  source = "github.com/momentum-ai/hipaa-stack//services/secrets-management/aws"
 
   name_prefix          = "health-stack"
   environment          = "production"

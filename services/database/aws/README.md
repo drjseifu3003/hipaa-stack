@@ -1,6 +1,6 @@
-# AWS RDS PostgreSQL Database Module
+# AWS RDS PostgreSQL Database Service
 
-This module provisions an encrypted, Multi-AZ PostgreSQL Database on Amazon RDS, designed to securely house healthcare data and PHI. It aligns with **164.312(a)(2)(iv) Encryption/Decryption** and **164.308(a)(7)(ii)(A) Data Backup Plan**.
+This service provisions an encrypted, Multi-AZ PostgreSQL Database on Amazon RDS, designed to securely house healthcare data and PHI. It aligns with **164.312(a)(2)(iv) Encryption/Decryption** and **164.308(a)(7)(ii)(A) Data Backup Plan**.
 
 ## HIPAA Compliance Features
 - **Storage Encryption**: Enforces full storage encryption at rest utilizing a dedicated Customer Managed Key (CMK) in KMS.
@@ -14,7 +14,7 @@ This module provisions an encrypted, Multi-AZ PostgreSQL Database on Amazon RDS,
 
 ```hcl
 module "rds_database" {
-  source = "github.com/momentum-ai/hipaa-stack//modules/database/aws"
+  source = "github.com/momentum-ai/hipaa-stack//services/database/aws"
 
   name_prefix         = "health-stack"
   environment         = "production"

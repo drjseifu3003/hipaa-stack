@@ -4,15 +4,15 @@
 
 ## What is HIPAAStack?
 
-While manually provisioning a single server is simple, scaling your application and business can lead to repetitive and time-consuming tasks. HIPAAStack solves this by providing battle-tested, production-ready Infrastructure as Code (IaC) modules organized around **compliance problems** on Amazon Web Services (AWS). 
+While manually provisioning a single server is simple, scaling your application and business can lead to repetitive and time-consuming tasks. HIPAAStack solves this by providing battle-tested, production-ready Infrastructure as Code (IaC) services organized around **compliance problems** on Amazon Web Services (AWS). 
 
-Each module is built to satisfy specific HIPAA / PIPA / PIPEDA technical safeguards, with the security and compliance reasoning documented inline in the code itself, not just in external documentation.
+Each service is built to satisfy specific HIPAA / PIPA / PIPEDA technical safeguards, with the security and compliance reasoning documented inline in the code itself, not just in external documentation.
 
 Built from real-world clinical client work: AI voice triage systems, legacy EMR integrations with no public APIs, multi-tenant clinical platforms, and conversational AI agents handling Protected Health Information (PHI) directly.
 
 ---
 
-## Module Status (AWS)
+## Service Status (AWS)
 
 | Problem / Domain | Status | Included AWS Services / Resources |
 | :--- | :---: | :--- |
@@ -44,7 +44,7 @@ Infrastructure is necessary but not sufficient. A perfectly encrypted VPC doesn'
 ```hcl
 # 1. Setup isolated networking and WAF protection
 module "network" {
-  source = "github.com/momentum-ai/hipaa-stack//modules/network-isolation/aws"
+  source = "github.com/momentum-ai/hipaa-stack//services/network-isolation/aws"
 
   name_prefix             = "clinic-prod"
   environment             = "production"
@@ -56,7 +56,7 @@ module "network" {
 
 # 2. Setup S3 storage for PHI with encryption & automatic daily backups
 module "storage" {
-  source = "github.com/momentum-ai/hipaa-stack//modules/encrypted-storage/aws"
+  source = "github.com/momentum-ai/hipaa-stack//services/encrypted-storage/aws"
 
   name_prefix         = "clinic-prod"
   environment         = "production"
@@ -67,7 +67,7 @@ module "storage" {
 
 # 3. Setup central audit trails & GuardDuty threat detection
 module "audit_logs" {
-  source = "github.com/momentum-ai/hipaa-stack//modules/audit-logging/aws"
+  source = "github.com/momentum-ai/hipaa-stack//services/audit-logging/aws"
 
   name_prefix        = "clinic-prod"
   environment        = "production"
@@ -76,13 +76,13 @@ module "audit_logs" {
 }
 ```
 
-See each module's respective directory for full configuration details and variables.
+See each service's respective directory for full configuration details and variables.
 
 ---
 
 ## Compliance Mapping
 
-See **[`docs/compliance-mapping.md`](./docs/compliance-mapping.md)** for a full breakdown mapping the HIPAA Technical Safeguards (164.312) to specific AWS resources configured in these modules.
+See **[`docs/compliance-mapping.md`](./docs/compliance-mapping.md)** for a full breakdown mapping the HIPAA Technical Safeguards (164.312) to specific AWS resources configured in these services.
 
 ---
 

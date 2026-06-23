@@ -44,7 +44,7 @@ When streaming live transcripts to an LLM, the audio-to-text translation (Speech
 
 If clinical call recording is required for diagnostic verification:
 
-- **Storage**: Save recordings inside a dedicated bucket configured via `modules/encrypted-storage/aws` (SSE-KMS key, public block, and versioning).
+- **Storage**: Save recordings inside a dedicated bucket configured via `services/encrypted-storage/aws` (SSE-KMS key, public block, and versioning).
 - **Access Control**: Strict IAM policies must prevent developers or generic APIs from reading the recording objects.
 - **Automated Lifecycle**: Implement S3/Blob lifecycle rules to move files to archive (Glacier Deep Archive) or delete them after the regulatory retention window.
 - **Redaction at Source**: Where possible, configure Vapi or Twilio to use automated PCI/PHI voice redaction to remove credit card or patient name details directly from the audio recording file.

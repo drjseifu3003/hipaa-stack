@@ -1,6 +1,6 @@
-# AWS Network Isolation Module
+# AWS Network Isolation Service
 
-This module deploys a secure, multi-AZ networking foundation on AWS designed to meet HIPAA Technical Safeguards, specifically **164.312(a)(1) Access Control** and **164.312(e)(1) Transmission Security**.
+This service deploys a secure, multi-AZ networking foundation on AWS designed to meet HIPAA Technical Safeguards, specifically **164.312(a)(1) Access Control** and **164.312(e)(1) Transmission Security**.
 
 ## HIPAA Compliance Features
 - **Strict Network Segmentation**: Isolates workloads by separating public-facing ingress and routing from private database and compute tiers (using public/private subnets and default-deny security groups).
@@ -13,7 +13,7 @@ This module deploys a secure, multi-AZ networking foundation on AWS designed to 
 
 ```hcl
 module "network" {
-  source = "github.com/momentum-ai/hipaa-stack//modules/network-isolation/aws"
+  source = "github.com/momentum-ai/hipaa-stack//services/network-isolation/aws"
 
   name_prefix             = "health-prod"
   environment             = "production"
