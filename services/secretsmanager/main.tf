@@ -11,7 +11,7 @@ terraform {
   }
 }
 
-resource "aws_secrets_manager_secret" "secret" {
+resource "aws_secretsmanager_secret" "secret" {
   name                    = "${var.name_prefix}-${var.secret_name}"
   description             = var.description
   kms_key_id              = var.kms_key_arn

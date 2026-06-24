@@ -83,7 +83,7 @@ resource "aws_s3_bucket_policy" "phi_policy" {
   })
 }
 
-resource "aws_s3_bucket_lifecycle_configuration_v2" "phi_lifecycle" {
+resource "aws_s3_bucket_lifecycle_configuration" "phi_lifecycle" {
   count  = var.enable_lifecycle_rules ? 1 : 0
   bucket = aws_s3_bucket.phi.id
 
