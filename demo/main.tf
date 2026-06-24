@@ -1,18 +1,11 @@
 # HIPAA Stack Unified Demo Configuration
-# This demo showcases all 13 security-hardened AWS modules working together:
-# 1. KMS (Customer Managed Keys with rotation)
-# 2. VPC (Isolated subnets, PrivateLink endpoints, Flow Logs)
-# 3. WAFv2 (Web Application Firewall protection rules)
-# 4. S3 (Encrypted, versioned storage for clinical records)
-# 5. RDS (Multi-AZ encrypted PostgreSQL database)
-# 6. Fargate (Isolated container compute tasks)
-# 7. VPN (Secure EC2 Client VPN ingress)
-# 8. Secrets Manager (KMS-encrypted app credentials)
-# 9. CloudWatch (KMS-encrypted application logs)
-# 10. CloudTrail (API & S3 data-plane activity auditing)
-# 11. GuardDuty (Continuous intelligent threat monitoring)
-# 12. Backup (Vault-secured automated backups for S3/RDS)
-# 13. HealthLake (Native FHIR R4 clinical database datastore)
+# This demo showcases security-hardened AWS modules working together.
+# To allow offline testing and easy demonstrations (e.g. for LinkedIn videos),
+# this configuration is set up in Mock/Offline mode:
+# - No active AWS credentials or account are required.
+# - The AWS provider is configured to skip credentials and STS validation.
+# - The HealthLake module (which requires the awscc provider and live validation)
+#   is commented out by default but can be re-enabled for live deployments.
 
 terraform {
   required_version = ">= 1.3.0"
@@ -21,19 +14,20 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
-    awscc = {
-      source  = "hashicorp/awscc"
-      version = ">= 0.70.0"
-    }
   }
 }
 
+# -----------------------------------------------------------------------------
+# Mocked AWS Provider (Allows 100% offline speculative planning)
+# -----------------------------------------------------------------------------
 provider "aws" {
-  region = var.aws_region
-}
-
-provider "awscc" {
-  region = var.aws_region
+  region                      = var.aws_region
+  access_key                  = "mock_access_key"
+  secret_key                  = "mock_secret_key"
+  skip_credentials_validation = true
+  skip_requesting_account_id  = true
+  skip_metadata_api_check     = true
+  skip_region_validation      = true
 }
 
 # -----------------------------------------------------------------------------
@@ -210,14 +204,16 @@ module "vault_backups" {
 
 # -----------------------------------------------------------------------------
 # 13. Standardized Healthcare Data Lake (AWS HealthLake)
+# Commented out by default in mock/offline mode as it requires the awscc provider
+# which does not support credentials/STS bypass. Re-enable when live keys are configured.
 # -----------------------------------------------------------------------------
-module "fhir_healthlake" {
-  source         = "github.com/drjseifu3003/hipaa-stack//services/healthlake?ref=feat/aws-hipaa-stack"
-  name_prefix    = var.name_prefix
-  environment    = var.environment
-  datastore_name = "care-records"
-  kms_key_arn    = module.kms.kms_key_arn
-}
+# module "fhir_healthlake" {
+#   source         = "github.com/drjseifu3003/hipaa-stack//services/healthlake?ref=feat/aws-hipaa-stack"
+#   name_prefix    = var.name_prefix
+#   environment    = var.environment
+#   datastore_name = "care-records"
+#   kms_key_arn    = module.kms.kms_key_arn
+# }
 
 # -----------------------------------------------------------------------------
 # Outputs for Demonstration
@@ -247,7 +243,7 @@ output "fargate_cluster_name" {
   description = "Secure ECS Fargate Cluster name"
 }
 
-output "healthlake_datastore_endpoint" {
-  value       = module.fhir_healthlake.datastore_endpoint
-  description = "FHIR HealthLake Datastore Endpoint"
-}
+# output "healthlake_datastore_endpoint" {
+#   value       = module.fhir_healthlake.datastore_endpoint
+#   description = "FHIR HealthLake Datastore Endpoint"
+# }
