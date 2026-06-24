@@ -91,6 +91,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "phi_lifecycle" {
     id     = "archive-old-phi"
     status = "Enabled"
 
+    filter {}
+
     noncurrent_version_transition {
       noncurrent_days = var.noncurrent_version_transition_days
       storage_class   = "GLACIER"
